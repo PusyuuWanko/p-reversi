@@ -1,0 +1,1118 @@
+@charset "UTF-8";
+
+/* =====================================================================
+   プシューリバーシの見た目。
+   濃い緑と濃い青を土台にした暗い配色に、ネオンの細い線と控えめな発光を
+   重ねた「サイバー空間」寄りのデザイン。背景は市松(チェック)柄と細い罫線を
+   ゆっくり流し、その上を淡い光がにじむ。動きはどれも低速・低コントラストで、
+   盤面を見ているあいだ気が散らない程度に留めている。
+   動きを減らす設定(prefers-reduced-motion)ではアニメーションを全部止める。
+   ===================================================================== */
+
+:root {
+  --bg: #04100d;
+  --bg-deep: #020806;
+
+  --ink: #dff6ec;
+  --ink-dim: #93b7ac;
+  --ink-faint: #5f8177;
+
+  --green: #1efaa0;
+  --green-soft: rgba(30, 250, 160, 0.16);
+  --green-line: rgba(30, 250, 160, 0.22);
+
+  --cyan: #3fd0ff;
+  --cyan-soft: rgba(63, 208, 255, 0.14);
+  --cyan-line: rgba(63, 208, 255, 0.22);
+
+  --danger: #ff7089;
+
+  --panel: rgba(6, 26, 23, 0.66);
+  --panel-solid: rgba(5, 20, 18, 0.92);
+  --field: rgba(2, 12, 12, 0.6);
+
+  --radius: 14px;
+  --radius-sm: 9px;
+
+  --sans: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  --mono: "SFMono-Regular", Consolas, "Roboto Mono", "Noto Sans Mono", "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ---------------------------------------------------------------------
+   背景(index.phpの .backdrop)。3枚重ねの装飾専用レイヤーで、
+   本文より後ろ(z-index:0)に敷き、本文側を z-index:1 で持ち上げる。
+   --------------------------------------------------------------------- */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% -10%, #072019 0%, transparent 60%),
+    linear-gradient(160deg, #04120f 0%, #04121c 52%, #030b12 100%);
+}
+
+/* 市松(チェック)柄 + 細い罫線。斜め方向にゆっくり流す。 */
+.backdrop-grid {
+  position: absolute;
+  inset: -25%;
+  background-image:
+    linear-gradient(45deg, rgba(30, 250, 160, 0.030) 25%, transparent 25%, transparent 75%, rgba(30, 250, 160, 0.030) 75%),
+    linear-gradient(45deg, rgba(63, 208, 255, 0.030) 25%, transparent 25%, transparent 75%, rgba(63, 208, 255, 0.030) 75%),
+    linear-gradient(rgba(30, 250, 160, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(63, 208, 255, 0.055) 1px, transparent 1px);
+  background-size: 88px 88px, 88px 88px, 44px 44px, 44px 44px;
+  background-position: 0 0, 44px 44px, 0 0, 0 0;
+  animation: grid-drift 64s linear infinite;
+}
+
+@keyframes grid-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-88px, -88px, 0); }
+}
+
+/* 緑と青のにじみ。ゆっくり呼吸するように行き来する。 */
+.backdrop-glow {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(36% 36% at 20% 16%, rgba(14, 122, 88, 0.40), transparent 70%),
+    radial-gradient(42% 42% at 84% 74%, rgba(18, 76, 148, 0.40), transparent 70%),
+    radial-gradient(28% 28% at 62% 8%, rgba(30, 250, 160, 0.10), transparent 70%);
+  animation: glow-drift 40s ease-in-out infinite alternate;
+}
+
+@keyframes glow-drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to   { transform: translate3d(2%, 3%, 0) scale(1.08); }
+}
+
+/* 走査線と、ごくゆっくり降りてくる光の帯。 */
+.backdrop-scan {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to bottom, rgba(190, 255, 235, 0.020) 0 1px, transparent 1px 3px);
+  opacity: 0.6;
+}
+.backdrop-scan::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40vh;
+  background: linear-gradient(to bottom, transparent, rgba(63, 208, 255, 0.05), transparent);
+  animation: scan-sweep 18s linear infinite;
+}
+
+@keyframes scan-sweep {
+  from { transform: translate3d(0, -60vh, 0); }
+  to   { transform: translate3d(0, 140vh, 0); }
+}
+
+/* ---------------------------------------------------------------------
+   ヘッダー / フッター
+   --------------------------------------------------------------------- */
+
+.site-header,
+.site-main,
+.site-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, rgba(4, 18, 15, 0.92), rgba(4, 18, 15, 0.62));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--green-line);
+  box-shadow: 0 1px 0 rgba(30, 250, 160, 0.10), 0 12px 30px rgba(0, 0, 0, 0.45);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.site-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.site-title-mark {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  transform: rotate(45deg);
+  border: 1px solid var(--green);
+  background: var(--green-soft);
+  box-shadow: 0 0 10px rgba(30, 250, 160, 0.6);
+  animation: mark-pulse 3.6s ease-in-out infinite;
+}
+
+@keyframes mark-pulse {
+  0%, 100% { opacity: 0.65; box-shadow: 0 0 6px rgba(30, 250, 160, 0.35); }
+  50%      { opacity: 1;    box-shadow: 0 0 16px rgba(30, 250, 160, 0.75); }
+}
+
+.site-title-text {
+  font-family: var(--mono);
+  font-size: 17px;
+  letter-spacing: 0.14em;
+  color: var(--green);
+  text-shadow: 0 0 14px rgba(30, 250, 160, 0.35);
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.site-user {
+  color: var(--ink-dim);
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+
+.nav_form {
+  margin: 0;
+}
+
+.link_button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--cyan);
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+.link_button:hover {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(63, 208, 255, 0.35);
+  transition: color 0.2s, border-color 0.2s;
+}
+a:hover {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.site-main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 26px 16px 70px;
+}
+
+.lead {
+  color: var(--ink-dim);
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+
+.site-footer {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 44px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  border-top: 1px solid rgba(63, 208, 255, 0.10);
+}
+
+/* ---------------------------------------------------------------------
+   タブ(対局方式の切り替え)。game.jsが組み立てる。
+   --------------------------------------------------------------------- */
+
+.tabbar {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  margin-bottom: 16px;
+  border: 1px solid var(--green-line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: 1 1 auto;
+  min-width: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-faint);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.18s, background 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.tab:hover {
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.03);
+}
+.tab.active {
+  color: var(--ink);
+  border-color: var(--green-line);
+  background: linear-gradient(135deg, var(--green-soft), var(--cyan-soft));
+  box-shadow: 0 0 18px rgba(30, 250, 160, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.tab:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.tab-label {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+.tab.active .tab-label {
+  color: var(--green);
+  text-shadow: 0 0 12px rgba(30, 250, 160, 0.4);
+}
+
+.tab-hint {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+.tabpanels {
+  position: relative;
+}
+
+/* タブを切り替えたときに、ほんの少し浮き上がって現れる。 */
+.tabpanel {
+  animation: panel-in 0.22s ease;
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------------------------------------------------------------------
+   パネル(カード)
+   --------------------------------------------------------------------- */
+
+.panel {
+  position: relative;
+  margin: 0 0 18px;
+  padding: 20px;
+  border: 1px solid var(--green-line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* 上辺に細いネオンのライン。カードの縁を「発光する筐体」に見せる。 */
+.panel::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), var(--cyan), transparent);
+  opacity: 0.7;
+}
+
+.panel-title {
+  margin: 0 0 14px;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: normal;
+  letter-spacing: 0.12em;
+  color: var(--green);
+}
+
+.section-title {
+  margin: 18px 0 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: normal;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::before {
+  content: "";
+  width: 3px;
+  height: 13px;
+  flex: none;
+  background: var(--cyan);
+  box-shadow: 0 0 8px rgba(63, 208, 255, 0.6);
+}
+
+.mode-section:first-child > .section-title,
+.mode-body > .section-title:first-child {
+  margin-top: 0;
+}
+
+.mode-lead {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.note {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  line-height: 1.7;
+}
+
+.js-notice {
+  padding: 10px 12px;
+  border: 1px dashed rgba(63, 208, 255, 0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(63, 208, 255, 0.05);
+}
+
+.unavailable-note {
+  margin: 6px 0 0;
+  color: var(--ink-faint);
+}
+
+/* ---------------------------------------------------------------------
+   ボタン類
+   --------------------------------------------------------------------- */
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.button,
+.small-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px; /* gapが使えない場合の保険でマージンを入れておくこと */
+  gap: 6px;
+  border: 1px solid var(--green-line);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(30, 250, 160, 0.14), rgba(63, 208, 255, 0.10));
+  color: var(--ink);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s, color 0.18s, transform 0.08s;
+}
+.button:hover,
+.small-button:hover {
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 18px rgba(30, 250, 160, 0.25);
+}
+.button:active,
+.small-button:active {
+  transform: translateY(1px);
+}
+.button:focus-visible,
+.small-button:focus-visible,
+.switch:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+.button[disabled],
+.small-button[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.button[disabled]:hover,
+.small-button[disabled]:hover {
+  border-color: var(--green-line);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.button {
+  padding: 11px 20px;
+  font-size: 14px;
+}
+.button.secondary {
+  border-color: var(--cyan-line);
+  background: linear-gradient(135deg, rgba(63, 208, 255, 0.14), rgba(30, 250, 160, 0.08));
+}
+.button.secondary:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 18px rgba(63, 208, 255, 0.25);
+}
+
+.small-button {
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+.small-button.ghost {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--ink-dim);
+}
+.small-button.ghost:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 14px rgba(63, 208, 255, 0.2);
+}
+.small-button.danger {
+  border-color: rgba(255, 112, 137, 0.4);
+  color: var(--danger);
+}
+.small-button.danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  box-shadow: 0 0 14px rgba(255, 112, 137, 0.25);
+}
+
+.inline-form {
+  display: inline-block;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------
+   入力欄
+   --------------------------------------------------------------------- */
+
+input[type="text"],
+select,
+textarea {
+  background: var(--field);
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+input[type="text"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 1px rgba(30, 250, 160, 0.3), 0 0 18px rgba(30, 250, 160, 0.18);
+}
+input[type="text"]::placeholder {
+  color: var(--ink-faint);
+}
+select option {
+  background: #061a17;
+  color: var(--ink);
+}
+textarea {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 12px;
+  resize: vertical;
+}
+
+.invite-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.invite-form label {
+  width: 100%;
+  margin-bottom: -2px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+}
+.invite-form input[type="text"] {
+  flex: 1 1 180px;
+  min-width: 150px;
+}
+.invite-form select {
+  flex: 0 1 auto;
+  min-width: 180px;
+}
+.invite-form button {
+  padding: 9px 18px;
+  border: 1px solid var(--green-line);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(30, 250, 160, 0.16), rgba(63, 208, 255, 0.10));
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, color 0.18s;
+}
+.invite-form button:hover {
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 18px rgba(30, 250, 160, 0.25);
+}
+
+.form-message {
+  width: 100%;
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  min-height: 1.4em;
+  color: var(--ink-dim);
+}
+.form-message.ok {
+  color: var(--green);
+}
+.form-message.error {
+  color: var(--danger);
+}
+
+/* ---------------------------------------------------------------------
+   対局一覧 / プロダクト一覧
+   --------------------------------------------------------------------- */
+
+.match-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.match-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 8px;
+  border-bottom: 1px solid rgba(63, 208, 255, 0.10);
+  transition: background 0.18s;
+}
+.match-row:hover {
+  background: rgba(63, 208, 255, 0.045);
+}
+.match-row:last-child {
+  border-bottom: none;
+}
+
+.match-row-info {
+  flex: 1 1 150px;
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+}
+.match-row-info strong {
+  font-weight: normal;
+  color: var(--ink);
+}
+
+.match-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.match-row-icon {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(63, 208, 255, 0.2);
+}
+
+.match-status {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.empty-note {
+  color: var(--ink-faint);
+  padding: 12px 8px;
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------------
+   盤面
+   --------------------------------------------------------------------- */
+
+.players-label,
+.score-label {
+  margin: 8px 0 2px;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
+}
+.score-label {
+  color: var(--green);
+  text-shadow: 0 0 12px rgba(30, 250, 160, 0.28);
+}
+
+.status-label {
+  min-height: 1.5em;
+  margin: 10px 0;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.board-container {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0;
+}
+
+/* 盤と石だけは、周りのサイバー寄りの配色に合わせず、よくあるオセロの見た目
+   (濃い緑の盤・黒い罫線・四隅の星・黒と白の石)にしてある。実際に打つうえで
+   いちばん大事なのは石の見分けやすさなので、ここは奇をてらわない。
+
+   罫線と星は盤(.othello-grid)の背景としてまとめて描き、マス(.cell)は透明に
+   している。マスを不透明にして隙間で線を作る方式だと、線の交点に置く星が
+   マスの下に隠れてしまうため。 */
+.othello-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  width: min(92vw, 430px);
+  aspect-ratio: 1 / 1;
+  gap: 0;
+  padding: 0;
+  border: 4px solid #12291d;
+  border-radius: 5px;
+  background-color: #1a7f4a;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(0, 0, 0, 0.8) 0 3px, transparent 3px),
+    radial-gradient(circle at 75% 25%, rgba(0, 0, 0, 0.8) 0 3px, transparent 3px),
+    radial-gradient(circle at 25% 75%, rgba(0, 0, 0, 0.8) 0 3px, transparent 3px),
+    radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.8) 0 3px, transparent 3px),
+    repeating-linear-gradient(to right, rgba(0, 0, 0, 0.55) 0 1px, transparent 1px calc(100% / 8)),
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0 1px, transparent 1px calc(100% / 8));
+  box-shadow:
+    inset 0 0 26px rgba(0, 0, 0, 0.35),
+    0 18px 44px rgba(0, 0, 0, 0.55);
+}
+
+.cell {
+  position: relative;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: default;
+  transition: background 0.18s;
+}
+
+.cell::before {
+  content: "";
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  transition: background 0.18s, inset 0.18s, box-shadow 0.18s;
+}
+
+.cell.black::before {
+  background: radial-gradient(circle at 34% 28%, #63666a 0%, #1b1c1e 46%, #050506 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
+}
+
+.cell.white::before {
+  background: radial-gradient(circle at 34% 28%, #ffffff 0%, #f4f3ee 46%, #cbc9c0 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+
+.cell.legal {
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.06);
+}
+.cell.legal::before {
+  inset: 38%;
+  background: rgba(255, 255, 255, 0.42);
+  animation: legal-pulse 2.6s ease-in-out infinite;
+}
+.cell.legal:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.cell.legal:hover::before {
+  inset: 30%;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+@keyframes legal-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* 直前に置かれた石の印。黒石・白石・緑の盤のどれに重なっても見えるよう、
+   盤の上では他に使っていない赤にしてある。 */
+.cell.last-move::after {
+  content: "";
+  position: absolute;
+  inset: 27%;
+  border-radius: 50%;
+  background: #e63a3a;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  animation: last-move-pulse 1.9s ease-in-out infinite;
+}
+
+@keyframes last-move-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(0.88); }
+  50%      { opacity: 1;   transform: scale(1); }
+}
+
+/* JS無効環境の盤面は1マス=1フォーム。フォーム自身はグリッドのレイアウトに
+   関与させず、中のボタン(.cell)をそのままグリッド項目にする。 */
+.cell-form {
+  display: contents;
+}
+
+/* ---------------------------------------------------------------------
+   P2Pの合図コード
+   --------------------------------------------------------------------- */
+
+.p2p-code {
+  margin: 10px 0;
+  padding: 14px 12px;
+  border: 1px dashed rgba(30, 250, 160, 0.4);
+  border-radius: var(--radius-sm);
+  background: rgba(30, 250, 160, 0.05);
+  font-family: var(--mono);
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  text-align: center;
+  word-break: break-all;
+  color: var(--green);
+  text-shadow: 0 0 16px rgba(30, 250, 160, 0.4);
+}
+
+.code-input {
+  flex: 1 1 220px;
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+}
+
+.p2p-profile-slot {
+  margin: 0 0 12px;
+}
+
+.p2p-manual {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(63, 208, 255, 0.12);
+}
+.p2p-manual > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  transition: color 0.18s;
+}
+.p2p-manual > summary:hover {
+  color: var(--cyan);
+}
+.p2p-manual .section-title {
+  font-size: 12px;
+  margin: 16px 0 6px;
+}
+
+/* ---------------------------------------------------------------------
+   音の方式の選択(audio-profiles.js)
+   --------------------------------------------------------------------- */
+
+.prevarsi-audio-profile-select {
+  font-size: 12.5px;
+}
+.prevarsi-audio-profile-select > label > span {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
+}
+.prevarsi-audio-profile-select select {
+  display: block;
+  width: 100%;
+}
+.prevarsi-audio-profile-select > details > summary {
+  cursor: pointer;
+  margin-top: 8px;
+  color: var(--ink-faint);
+  transition: color 0.18s;
+}
+.prevarsi-audio-profile-select > details > summary:hover {
+  color: var(--cyan);
+}
+
+.prevarsi-audio-profile-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 11.5px;
+}
+.prevarsi-audio-profile-table th,
+.prevarsi-audio-profile-table td {
+  border: 1px solid rgba(63, 208, 255, 0.14);
+  padding: 6px 7px;
+  text-align: left;
+  color: var(--ink-faint);
+}
+.prevarsi-audio-profile-table th {
+  font-family: var(--mono);
+  font-weight: normal;
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
+  background: rgba(63, 208, 255, 0.06);
+}
+.prevarsi-audio-profile-table tr.prevarsi-audio-profile-row-selected td {
+  border-color: var(--green-line);
+  background: rgba(30, 250, 160, 0.08);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------
+   設定
+   --------------------------------------------------------------------- */
+
+.settings-item {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(63, 208, 255, 0.10);
+}
+.settings-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.settings-item .section-title {
+  margin-top: 0;
+}
+.settings-item .note {
+  margin: 0;
+}
+
+.settings-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.settings-item-head .section-title {
+  margin-bottom: 0;
+}
+
+/* 入り切りスイッチ(game.jsが組み立てる) */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink-faint);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.switch-track {
+  position: relative;
+  width: 50px;
+  height: 26px;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+
+.switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  transition: left 0.18s ease, background 0.18s, box-shadow 0.18s;
+}
+
+.switch-state {
+  min-width: 2.6em;
+  text-align: left;
+}
+
+.switch.on {
+  color: var(--green);
+  text-shadow: 0 0 12px rgba(30, 250, 160, 0.4);
+}
+.switch.on .switch-track {
+  border-color: var(--green);
+  background: var(--green-soft);
+  box-shadow: 0 0 16px rgba(30, 250, 160, 0.25);
+}
+.switch.on .switch-knob {
+  left: 27px;
+  background: var(--green);
+  box-shadow: 0 0 12px rgba(30, 250, 160, 0.8);
+}
+
+/* index.phpが出している設定の塊を「設定」タブへ移したあと、
+   カードの入れ子に見えないよう枠だけ外す。 */
+.settings-embedded {
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.settings-embedded::before {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------
+   スクロールバー(対応ブラウザのみ)
+   --------------------------------------------------------------------- */
+
+* {
+  scrollbar-color: rgba(30, 250, 160, 0.35) transparent;
+  scrollbar-width: thin;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(30, 250, 160, 0.28);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(30, 250, 160, 0.5);
+  background-clip: padding-box;
+}
+
+/* ---------------------------------------------------------------------
+   画面幅への対応 / 動きを減らす設定
+   --------------------------------------------------------------------- */
+
+@media (max-width: 560px) {
+  .site-main {
+    padding: 18px 12px 56px;
+  }
+  .panel {
+    padding: 15px;
+  }
+  .tab {
+    min-width: 0;
+    padding: 8px 11px;
+  }
+  .tab-hint {
+    display: none;
+  }
+  .tab-label {
+    font-size: 10.5px;
+  }
+  .p2p-code {
+    font-size: 15px;
+    letter-spacing: 0.08em;
+  }
+  .settings-item-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop-grid,
+  .backdrop-glow,
+  .backdrop-scan::after,
+  .site-title-mark,
+  .tabpanel,
+  .cell.legal::before,
+  .cell.last-move::after {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   JS無効時に盤面へ戻るための目印（index.php の prevarsiNoJsGridHtml）
+   
+   ヘッダーは position:sticky で画面の上に貼り付いたままなので、盤面の先頭を
+   そのまま指すと盤面の上側がヘッダーの下へ潜って隠れる。高さ0のこの空要素を
+   盤面の手前に置き、topをマイナスにしてヘッダーの高さぶん上へずらすことで、
+   ブラウザが送る位置を持ち上げている。
+   
+   scroll-margin-top でも同じことができるが、JS無効で使われるような古い
+   ブラウザには無い。ここで一番効いてほしいのはその古い側なので、
+   どこでも効くこの書き方にしている。値を変えるときはヘッダーの高さ
+   （.site-header の padding 14px×2 ＋ 中身）と合わせること。
+   --------------------------------------------------------------------- */
+.board-anchor {
+  display: block;
+  height: 0;
+  position: relative;
+  top: -96px;
+  visibility: hidden;
+}
+
+/* 画面が狭いとヘッダーが2行に折り返して高くなるぶん、余分に持ち上げる。 */
+@media (max-width: 540px) {
+  .board-anchor { top: -140px; }
+}
